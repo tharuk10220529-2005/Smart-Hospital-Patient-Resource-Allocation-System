@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void printLookupData(const int SPECIALITY_ID[], const char *SPECIALITY_NAME[], const float BASE_FEE[],
                     const int CONSALTAION_TIME[], const int DALIY_PATIENT_CAP[],
@@ -14,17 +15,154 @@ int main() {
     const int CONSALTAION_TIME[] = {15, 20, 30, 30};
     const int DALIY_PATIENT_CAP[] = {30, 20, 12, 10};
 
-    int bedOccupancy[4][20] = {0};
     const int WARD_ID[] = {1, 2, 3, 4};
     const char *WARD_NAME[] = {"General Ward", "Paediatric Ward", "Surgical Ward", "ICU(Intensive Care Unit)"};
     const float BED_RATE[] = {3000.00, 6000.00, 12000.00, 25000.00};
     const int BED_CAPACITY[] = {20, 10, 10, 5};
 
-    printLookupData(SPECIALITY_ID, SPECIALITY_NAME, BASE_FEE, CONSALTAION_TIME, DALIY_PATIENT_CAP,
-                    WARD_ID, WARD_NAME, BED_RATE, BED_CAPACITY);
+    int bedOccupancy[4][20] = {0};
 
+    char patientName[100][50];
+    int patientAge[100];
+    int emergencyLevel[100];
+    int specialtyID[100];
+    int checkAdmitted[100];
+    int wardId[100];
+    int daysAdmitted[100];
 
-    printBedOccupancy(bedOccupancy, BED_CAPACITY, WARD_NAME);
+    int specialtyQueueCount[4] = {0, 0, 0, 0};
+    int patientCount = 0;
+    int choice = 0;
+
+    do {
+        printf("\n----------------------------------------\n");
+        printf("   SMART HOSPITAL MANAGEMENT SYSTEM       \n");
+        printf("------------------------------------------\n");
+        printf("1. Display Lookup Data & Bed Occupancy\n");
+        printf("2. Register New Patient (Full Intake Process)\n");
+        printf("3. Estimated Waiting Time Report\n");
+        printf("4. Exit Program\n");
+        printf("Your choice : ");
+        scanf("%d",&choice);
+
+        switch (choice) {
+            case 1:
+                printLookupData(SPECIALITY_ID, SPECIALITY_NAME, BASE_FEE, CONSALTAION_TIME, DALIY_PATIENT_CAP,
+                                WARD_ID, WARD_NAME, BED_RATE, BED_CAPACITY);
+                printBedOccupancy(bedOccupancy, BED_CAPACITY, WARD_NAME);
+                break;
+
+            case 2: {
+                // Step 1: Patient Personal Details
+                printf("\n--- Patient Details (Patient ID: PAT-%d) ---\n", 1001 + patientCount);
+                printf("Patient Name : ");
+                scanf(" %[^\n]s", patientName[patientCount]);
+
+                printf("Patient Age (years) : ");
+                scanf("%d", &patientAge[patientCount]);
+
+                do {
+                    printf("Emergency / Triage Level (1 = Normal, 2 = Urgent, 3 = Critical) : ");
+                    scanf("%d", &emergencyLevel[patientCount]);
+                    if (emergencyLevel[patientCount] < 1 || emergencyLevel[patientCount] > 3) {
+                        printf("Invalid Input! Enter 1, 2, or 3.\n");
+                    }
+                } while (emergencyLevel[patientCount] < 1 || emergencyLevel[patientCount] > 3);
+
+                // Step 2: Specialty Selection
+                int tempSpec = 0;
+                printf("\n--- Specialty Selection ---\n");
+                do {
+                    printf("Specialty ID (1 to 4) : ");
+                    scanf("%d", &tempSpec);
+                    if (tempSpec < 1 || tempSpec > 4) {
+                        printf("Invalid Specialty ID! Enter between 1 and 4.\n");
+                    }
+                } while (tempSpec < 1 || tempSpec > 4);
+
+                specialtyID[patientCount] = tempSpec;
+                specialtyQueueCount[tempSpec - 1]++;
+                printf("Selected Specialty: %s | Base Fee: LKR %.2f\n",
+                       SPECIALITY_NAME[tempSpec - 1],
+                       BASE_FEE[tempSpec - 1]);
+
+                // Step 3: Ward Admission & Bed Allocation
+                printf("\n--- Ward Admission Details ---\n");
+                do {
+                    printf("Is Admitted to Ward? (1 = Yes, 0 = No) : ");
+                    scanf("%d", &checkAdmitted[patientCount]);
+                    if (checkAdmitted[patientCount] != 0 && checkAdmitted[patientCount] != 1) {
+                        printf("Invalid Input! Enter 1 for Yes or 0 for No.\n");
+                    }
+                } while (checkAdmitted[patientCount] != 0 && checkAdmitted[patientCount] != 1);
+
+                if (checkAdmitted[patientCount] == 1) {
+                    do {
+                        printf("Input Ward ID (1 to 4) : ");
+                        scanf("%d", &wardId[patientCount]);
+                        if (wardId[patientCount] < 1 || wardId[patientCount] > 4) {
+                            printf("Invalid Ward ID! Enter between 1 and 4.\n");
+                        }
+                    } while (wardId[patientCount] < 1 || wardId[patientCount] > 4);
+
+                    do {
+                        printf("Input Days Admitted : ");
+                        scanf("%d", &daysAdmitted[patientCount]);
+                        if (daysAdmitted[patientCount] <= 0) {
+                            printf("Invalid Input! Days admitted must be greater than 0.\n");
+                        }
+                    } while (daysAdmitted[patientCount] <= 0);
+
+                    
+                    int selectedWard = wardId[patientCount] - 1;
+                    int bedAllocated = 0;
+
+                    for (int b = 0; b < BED_CAPACITY[selectedWard]; b++) {
+                        if (bedOccupancy[selectedWard][b] == 0) {
+                            bedOccupancy[selectedWard][b] = 1;
+                            bedAllocated = 1;
+                            printf("Bed Allocated Successfully! Ward: %s | Bed No: %d\n",
+                                   WARD_NAME[selectedWard], b + 1);
+                            break;
+                        }
+                    }
+
+                    if (!bedAllocated) {
+                        printf("Warning: No available beds in %s!\n", WARD_NAME[selectedWard]);
+                    }
+
+                } else {
+                    wardId[patientCount] = 0;
+                    daysAdmitted[patientCount] = 0;
+                    printf("Patient registered as OPD (No Bed Allocated).\n");
+                }
+
+                printf("\nPatient Registration Successful!!\n");
+                patientCount++;
+                break;
+            }
+
+            case 3: {
+                printf("\n--- Estimated Waiting Time Report ---\n");
+                int s;
+                for (s = 0; s < 4; s++) {
+                    int estimatedWait = specialtyQueueCount[s] * CONSALTAION_TIME[s];
+                    printf("Specialty: %-25s | Queue: %-3d | Est. Wait: %d mins\n",
+                           SPECIALITY_NAME[s], specialtyQueueCount[s], estimatedWait);
+                }
+                break;
+            }
+
+            case 4:
+                printf("\nExiting Program...\n");
+                break;
+
+            default:
+                printf("\nInvalid Choice! Enter a number between 1-4.\n");
+                break;
+        }
+
+    } while (choice != 4);
 
     return 0;
 }
@@ -57,7 +195,7 @@ void printLookupData(const int SPECIALITY_ID[], const char *SPECIALITY_NAME[], c
     printf("-----------------------------------------------------------------------------------------------\n");
 }
 
-void printBedOccupancy(const int bedOccupancy[4][20], const int BED_CAPACITY[], const char *WARD_NAME[]){
+void printBedOccupancy(const int bedOccupancy[4][20], const int BED_CAPACITY[], const char *WARD_NAME[]) {
     int w, b;
     printf("\nInitial Bed Occupancy Status (0 = Available, 1 = Occupied)\n");
     printf("-----------------------------------------------------------------------------------------------\n");
