@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+//function prototype
 void printLookupData(const int SPECIALITY_ID[], const char *SPECIALITY_NAME[], const float BASE_FEE[],
                     const int CONSALTAION_TIME[], const int DALIY_PATIENT_CAP[],
                     const int WARD_ID[], const char *WARD_NAME[], const float BED_RATE[],
@@ -33,7 +34,7 @@ int main() {
     int specialtyQueueCount[4] = {0, 0, 0, 0};
     int patientCount = 0;
     int choice = 0;
-
+  //driven menu
     do {
         printf("\n----------------------------------------\n");
         printf("   SMART HOSPITAL MANAGEMENT SYSTEM       \n");
@@ -53,7 +54,7 @@ int main() {
                 break;
 
             case 2: {
-                // Step 1: Patient Personal Details
+                //Patient Personal Details
                 printf("\n--- Patient Details (Patient ID: PAT-%d) ---\n", 1001 + patientCount);
                 printf("Patient Name : ");
                 scanf(" %[^\n]s", patientName[patientCount]);
@@ -69,7 +70,7 @@ int main() {
                     }
                 } while (emergencyLevel[patientCount] < 1 || emergencyLevel[patientCount] > 3);
 
-                // Step 2: Specialty Selection
+                // Specialty Selection
                 int tempSpec = 0;
                 printf("\n--- Specialty Selection ---\n");
                 do {
@@ -86,7 +87,7 @@ int main() {
                        SPECIALITY_NAME[tempSpec - 1],
                        BASE_FEE[tempSpec - 1]);
 
-                // Step 3: Ward Admission & Bed Allocation
+                //Ward Admission & Bed Allocation
                 printf("\n--- Ward Admission Details ---\n");
                 do {
                     printf("Is Admitted to Ward? (1 = Yes, 0 = No) : ");
@@ -95,7 +96,7 @@ int main() {
                         printf("Invalid Input! Enter 1 for Yes or 0 for No.\n");
                     }
                 } while (checkAdmitted[patientCount] != 0 && checkAdmitted[patientCount] != 1);
-
+                  //validation for specialty and ward selections(Invalid IDs)
                 if (checkAdmitted[patientCount] == 1) {
                     do {
                         printf("Input Ward ID (1 to 4) : ");
@@ -104,7 +105,7 @@ int main() {
                             printf("Invalid Ward ID! Enter between 1 and 4.\n");
                         }
                     } while (wardId[patientCount] < 1 || wardId[patientCount] > 4);
-
+                  
                     do {
                         printf("Input Days Admitted : ");
                         scanf("%d", &daysAdmitted[patientCount]);
@@ -116,7 +117,7 @@ int main() {
                     
                     int selectedWard = wardId[patientCount] - 1;
                     int bedAllocated = 0;
-
+                  //bed allocation logic and occupancy matrix updates
                     for (int b = 0; b < BED_CAPACITY[selectedWard]; b++) {
                         if (bedOccupancy[selectedWard][b] == 0) {
                             bedOccupancy[selectedWard][b] = 1;
