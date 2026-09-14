@@ -7,7 +7,9 @@ void printLookupData(const int SPECIALITY_ID[], const char *SPECIALITY_NAME[], c
                     const int CONSALTAION_TIME[], const int DALIY_PATIENT_CAP[],
                     const int WARD_ID[], const char *WARD_NAME[], const float BED_RATE[],
                     const int BED_CAPACITY[]);
+void calculateWaitingTime(const char *SPECIALITY_NAME[],int specialtyQueueCount[],const int CONSALTAION_TIME[]);
 void printBedOccupancy(const int bedOccupancy[4][20], const int BED_CAPACITY[], const char *WARD_NAME[]);
+float calculatEmergencySurcharge(int emergencyLevel[],const float BASE_FEE[],int tempSpec,int patientCount);
 
 int main() {
     const int SPECIALITY_ID[] = {1, 2, 3, 4};
@@ -29,16 +31,18 @@ int main() {
     int specialtyID[100];
     int checkAdmitted[100];
     int wardId[100];
+    int tempSpec = 0;
     int daysAdmitted[100];
 
     int specialtyQueueCount[4] = {0, 0, 0, 0};
     int patientCount = 0;
     int choice = 0;
-  //driven menu
+
+    //driven menu
     do {
-        printf("\n----------------------------------------\n");
+        printf("\n==========================================\n");
         printf("   SMART HOSPITAL MANAGEMENT SYSTEM       \n");
-        printf("------------------------------------------\n");
+        printf("==========================================\n");
         printf("1. Display Lookup Data & Bed Occupancy\n");
         printf("2. Register New Patient (Full Intake Process)\n");
         printf("3. Estimated Waiting Time Report\n");
@@ -46,7 +50,7 @@ int main() {
         printf("Your choice : ");
         scanf("%d",&choice);
 
-        switch (choice) {
+        switch (choice){
             case 1:
                 printLookupData(SPECIALITY_ID, SPECIALITY_NAME, BASE_FEE, CONSALTAION_TIME, DALIY_PATIENT_CAP,
                                 WARD_ID, WARD_NAME, BED_RATE, BED_CAPACITY);
@@ -64,14 +68,13 @@ int main() {
 
                 do {
                     printf("Emergency / Triage Level (1 = Normal, 2 = Urgent, 3 = Critical) : ");
-                    scanf("%d", &emergencyLevel[patientCount]);
+                    scanf("%d",&emergencyLevel[patientCount]);
                     if (emergencyLevel[patientCount] < 1 || emergencyLevel[patientCount] > 3) {
                         printf("Invalid Input! Enter 1, 2, or 3.\n");
                     }
                 } while (emergencyLevel[patientCount] < 1 || emergencyLevel[patientCount] > 3);
 
-                // Specialty Selection
-                int tempSpec = 0;
+                //Specialty Selection
                 printf("\n--- Specialty Selection ---\n");
                 do {
                     printf("Specialty ID (1 to 4) : ");
@@ -96,7 +99,7 @@ int main() {
                         printf("Invalid Input! Enter 1 for Yes or 0 for No.\n");
                     }
                 } while (checkAdmitted[patientCount] != 0 && checkAdmitted[patientCount] != 1);
-                  //validation for specialty and ward selections(Invalid IDs)
+                //validation for specialty and ward selections(Invalid IDs)
                 if (checkAdmitted[patientCount] == 1) {
                     do {
                         printf("Input Ward ID (1 to 4) : ");
@@ -105,7 +108,7 @@ int main() {
                             printf("Invalid Ward ID! Enter between 1 and 4.\n");
                         }
                     } while (wardId[patientCount] < 1 || wardId[patientCount] > 4);
-                  
+
                     do {
                         printf("Input Days Admitted : ");
                         scanf("%d", &daysAdmitted[patientCount]);
@@ -114,10 +117,11 @@ int main() {
                         }
                     } while (daysAdmitted[patientCount] <= 0);
 
-                    
+
                     int selectedWard = wardId[patientCount] - 1;
                     int bedAllocated = 0;
-                  //bed allocation logic and occupancy matrix updates
+
+                     //bed allocation logic and occupancy matrix updates
                     for (int b = 0; b < BED_CAPACITY[selectedWard]; b++) {
                         if (bedOccupancy[selectedWard][b] == 0) {
                             bedOccupancy[selectedWard][b] = 1;
@@ -139,28 +143,27 @@ int main() {
                 }
 
                 printf("\nPatient Registration Successful!!\n");
+
+                calculatEmergencySurcharge(emergencyLevel,BASE_FEE,tempSpec,patientCount);
                 patientCount++;
                 break;
             }
 
             case 3: {
                 printf("\n--- Estimated Waiting Time Report ---\n");
-                int s;
-                for (s = 0; s < 4; s++) {
-                    int estimatedWait = specialtyQueueCount[s] * CONSALTAION_TIME[s];
-                    printf("Specialty: %-25s | Queue: %-3d | Est. Wait: %d mins\n",
-                           SPECIALITY_NAME[s], specialtyQueueCount[s], estimatedWait);
+                calculateWaitingTime(SPECIALITY_NAME,specialtyQueueCount,CONSALTAION_TIME);
                 }
+                break;
+
+            case 4:{
+                printf("\nThank for get service from us !!\n");
                 break;
             }
 
-            case 4:
-                printf("\nExiting Program...\n");
-                break;
-
-            default:
+            default:{
                 printf("\nInvalid Choice! Enter a number between 1-4.\n");
                 break;
+              }
         }
 
     } while (choice != 4);
@@ -208,4 +211,26 @@ void printBedOccupancy(const int bedOccupancy[4][20], const int BED_CAPACITY[], 
         printf("]\n");
     }
     printf("-----------------------------------------------------------------------------------------------\n");
+}
+void calculateWaitingTime(const char *SPECIALITY_NAME[],int specialtyQueueCount[],const int CONSALTAION_TIME[]){
+        int s;
+        for (s = 0; s < 4; s++) {
+            int estimatedWait = specialtyQueueCount[s] * CONSALTAION_TIME[s];
+            printf("Specialty: %-25s | Queue: %-3d | Est. Wait: %d mins\n",SPECIALITY_NAME[s], specialtyQueueCount[s], estimatedWait);
+        }
+}
+float calculatEmergencySurcharge(int emergencyLevel[],const float BASE_FEE[],int tempSpec,int patientCount){
+
+    float totlSurcharge = 0.0;
+    float surchargePercentage = 0.0;
+    switch(emergencyLevel[patientCount]){
+        case 1 :surchargePercentage = 0.0;
+            break;
+        case 2 :surchargePercentage = 0.2;
+            break;
+        default :surchargePercentage = 0.5;
+        break;
+    }
+    totlSurcharge = BASE_FEE[tempSpec-1] * surchargePercentage;
+    return totlSurcharge;
 }
