@@ -10,6 +10,9 @@ void printLookupData(const int SPECIALITY_ID[], const char *SPECIALITY_NAME[], c
 void calculateWaitingTime(const char *SPECIALITY_NAME[],int specialtyQueueCount[],const int CONSALTAION_TIME[]);
 void printBedOccupancy(const int bedOccupancy[4][20], const int BED_CAPACITY[], const char *WARD_NAME[]);
 float calculatEmergencySurcharge(int emergencyLevel[],const float BASE_FEE[],int tempSpec,int patientCount);
+float wardDailyRate(int wardId[],int patientCount);
+float calculateTotalWardCost(int daysAdmitted[],float wardDailyRate,int patientCount);
+float calculateGrossTotalBill(const float BASE_FEE[],float calculatedemergencySurcharge,float calclulatedTotalWardCost,int tempSpec);
 
 int main() {
     const int SPECIALITY_ID[] = {1, 2, 3, 4};
@@ -94,7 +97,7 @@ int main() {
                 printf("\n--- Ward Admission Details ---\n");
                 do {
                     printf("Is Admitted to Ward? (1 = Yes, 0 = No) : ");
-                    scanf("%d", &checkAdmitted[patientCount]);
+                    scanf("%d",&checkAdmitted[patientCount]);
                     if (checkAdmitted[patientCount] != 0 && checkAdmitted[patientCount] != 1) {
                         printf("Invalid Input! Enter 1 for Yes or 0 for No.\n");
                     }
@@ -144,7 +147,11 @@ int main() {
 
                 printf("\nPatient Registration Successful!!\n");
 
-                calculatEmergencySurcharge(emergencyLevel,BASE_FEE,tempSpec,patientCount);
+                float calculatedemergencySurcharge = calculatEmergencySurcharge(emergencyLevel,BASE_FEE,tempSpec,patientCount);
+                float daliyRate = wardDailyRate(wardId,patientCount);
+                float calclulatedTotalWardCost = calculateTotalWardCost(daysAdmitted,daliyRate,patientCount);
+                calculateGrossTotalBill(BASE_FEE,calculatedemergencySurcharge,calclulatedTotalWardCost,tempSpec);
+
                 patientCount++;
                 break;
             }
@@ -233,4 +240,31 @@ float calculatEmergencySurcharge(int emergencyLevel[],const float BASE_FEE[],int
     }
     totlSurcharge = BASE_FEE[tempSpec-1] * surchargePercentage;
     return totlSurcharge;
+}
+// Lookup Daily Bed Rate for Ward ID
+float wardDailyRate(int wardId[],int patientCount){
+    float wardRate = 0.0;
+    switch(wardId[patientCount]){
+        case 1: wardRate = 3000.0; //General Ward Rate
+            break;
+        case 2: wardRate = 6000.0; //Paediatric WardaRate
+            break;
+        case 3: wardRate = 12000.0; //Surgical Ward Rate
+            break;
+        default: wardRate = 25000.0; //ICU Rate
+        break;
+    }
+    return wardRate;
+}
+// Total Ward Stay Cost calculation
+float calculateTotalWardCost(int daysAdmitted[],float wardDailyRate,int patientCount){
+    float totalWardCost = 0.0;
+
+    totalWardCost = daysAdmitted[patientCount] * wardDailyRate;
+    return totalWardCost;
+}
+// Gross Total Bill Calculation
+float calculateGrossTotalBill(const float BASE_FEE[],float calculatedemergencySurcharge,float calclulatedTotalWardCost,int tempSpec){
+    float totalBill = BASE_FEE[tempSpec-1] + calculatedemergencySurcharge + calclulatedTotalWardCost;
+    return totalBill;
 }
