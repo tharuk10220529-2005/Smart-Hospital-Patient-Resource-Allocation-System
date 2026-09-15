@@ -13,6 +13,7 @@ float calculatEmergencySurcharge(int emergencyLevel[],const float BASE_FEE[],int
 float wardDailyRate(int wardId[],int patientCount);
 float calculateTotalWardCost(int daysAdmitted[],float wardDailyRate,int patientCount);
 float calculateGrossTotalBill(const float BASE_FEE[],float calculatedemergencySurcharge,float calclulatedTotalWardCost,int tempSpec);
+float calculatedFinalAmountPayable(int patientAge[],float calclulatedGrossTotalBill,int patientCount);
 
 int main() {
     const int SPECIALITY_ID[] = {1, 2, 3, 4};
@@ -150,7 +151,8 @@ int main() {
                 float calculatedemergencySurcharge = calculatEmergencySurcharge(emergencyLevel,BASE_FEE,tempSpec,patientCount);
                 float daliyRate = wardDailyRate(wardId,patientCount);
                 float calclulatedTotalWardCost = calculateTotalWardCost(daysAdmitted,daliyRate,patientCount);
-                calculateGrossTotalBill(BASE_FEE,calculatedemergencySurcharge,calclulatedTotalWardCost,tempSpec);
+                float calclulatedGrossTotalBill = calculateGrossTotalBill(BASE_FEE,calculatedemergencySurcharge,calclulatedTotalWardCost,tempSpec);
+                calculatedFinalAmountPayable(patientAge,calclulatedGrossTotalBill,patientCount);
 
                 patientCount++;
                 break;
@@ -267,4 +269,18 @@ float calculateTotalWardCost(int daysAdmitted[],float wardDailyRate,int patientC
 float calculateGrossTotalBill(const float BASE_FEE[],float calculatedemergencySurcharge,float calclulatedTotalWardCost,int tempSpec){
     float totalBill = BASE_FEE[tempSpec-1] + calculatedemergencySurcharge + calclulatedTotalWardCost;
     return totalBill;
+}
+//age based Discount calculation && finalamount
+float calculatedFinalAmountPayable(int patientAge[],float calclulatedGrossTotalBill,int patientCount){
+    float discount = 0.0;
+
+    if(patientAge[patientCount] > 0 && (patientAge[patientCount] < 5 || patientAge[patientCount] > 65)){
+        discount = calclulatedGrossTotalBill * 0.15;//15% discount
+    }
+    else{
+        discount = 0.0;
+    }
+    float finalAmount = calclulatedGrossTotalBill - discount;
+
+    return finalAmount;
 }
