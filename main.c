@@ -18,6 +18,8 @@ float calculateGrossTotalBill(const float BASE_FEE[],float calculatedemergencySu
 float calculatedFinalAmountPayable(int patientAge[],float calclulatedGrossTotalBill,int patientCount);
 void sortAndDisplay(char patientName[][50],int patientAge[],int emergencyLevel[],int specialtyID[],
                     int checkAdmitted[],int wardId[],int daysAdmitted[],int patientCount);
+void generatePerformanceReport(char patientName[][50], int emergencyLevel[], int checkAdmitted[], int wardId[], int daysAdmitted[], int patientCount,
+                               float totalRevenue, float totalDiscounts, char highestPayingPatient[], float maxFinalAmount,const int BED_CAPACITY[]);
 int main()
 {
     //--------------------------------------------------
@@ -49,8 +51,12 @@ int main()
     int wardId[100];
     int tempSpec = 0;
     int daysAdmitted[100];
+    float maxFinalAmount = 0.0;
+    char highestPayingPatient[100] = "";
+    float totalRevenue = 0.0;
+    float totalDiscounts = 0.0;
 
-    int specialtyQueueCount[4] = {0,0,0,0};// Real-time patient count per specialty
+    int specialtyQueueCount[4] = {0, 0, 0, 0};// Real-time patient count per specialty
     int patientCount = 0;// Total registered patient counter
     int choice = 0;// User menu selection flag
 
@@ -65,6 +71,7 @@ int main()
         printf("1. Display Lookup Data & Bed Occupancy\n");
         printf("2. Register New Patient (Full Intake Process) & Print the Bill\n");
         printf("3. Billing & Waiting Time Calculations\n");
+        printf("4. Performance Reports & Analytics\n");
         printf("5. Exit Program\n");
         printf("Your choice : ");
         scanf("%d",&choice);
@@ -195,7 +202,23 @@ int main()
             float discount = calculatedFinalAmountPayable(patientAge,calclulatedGrossTotalBill,patientCount);
             float finalAmount = calclulatedGrossTotalBill -discount;
 
+            //find total revenue & total discount
+            totalRevenue += finalAmount;
+            totalDiscounts += discount;
+            //find max payable customer & amount
+            float tempmax = finalAmount;
+            if(maxFinalAmount < tempmax)
+            {
+                maxFinalAmount = tempmax;
+                strcpy(highestPayingPatient,patientName[patientCount]);
+            }
+            else if(maxFinalAmount == tempmax)
+            {
+                strcat(highestPayingPatient,",");
+                strcat(highestPayingPatient,patientName[patientCount]);
+            }
             //print final amount and Bill
+
             printf("\n==================================================\n");
             printf("                PATIENT INVOICE / RECEIPT          \n");
             printf("==================================================\n");
@@ -234,8 +257,14 @@ int main()
             }
             break;
         }
-
         case 4:
+        {
+            generatePerformanceReport(patientName,emergencyLevel,checkAdmitted,wardId,daysAdmitted,patientCount,
+                                      totalRevenue,totalDiscounts,highestPayingPatient,maxFinalAmount,BED_CAPACITY);
+            break;
+        }
+
+        case 5:
         {
             printf("\nThank for get service from us !!\n");
             break;
@@ -249,7 +278,7 @@ int main()
         }
 
     }
-    while (choice != 4);
+    while (choice != 5);
 
     return 0;
 }
@@ -458,4 +487,61 @@ void sortAndDisplay(char patientName[][50],int patientAge[],int emergencyLevel[]
                (checkAdmitted[i] == 1 ? "Yes" : "No"));//use ternary operator to check addmitted
     }
     printf("----------------------------------------------------------------------------------------\n");
+}
+//Performance Reports & Analytics
+void generatePerformanceReport(char patientName[][50], int emergencyLevel[], int checkAdmitted[], int wardId[], int daysAdmitted[], int patientCount,
+                               float totalRevenue, float totalDiscounts, char highestPayingPatient[], float maxFinalAmount,const int BED_CAPACITY[])
+{
+    int i;
+    int countLevel1 = 0,countLevel2 = 0,countLevel3 = 0;
+    int wardOccupancy[4] = {0,0,0,0};
+
+    if(patientCount == 0)
+    {
+        printf("\nNo patient data available to generate reports!!\n");
+    }
+    for(i=0; i<patientCount; i++)
+    {
+        if(emergencyLevel[i]== 1) countLevel1++;
+        else if(emergencyLevel[i]==2) countLevel2++;
+        else countLevel3++;
+
+        if(checkAdmitted[i] == 1 && wardId[i] >= 0 && wardId[i] <= 4)
+        {
+            wardOccupancy[wardId[i]-1]++;
+        }
+    }
+    printf("\n=========================================================\n");
+    printf("            PERFORMANCE REPORTS & ANALYTICS              \n");
+    printf("=========================================================\n");
+
+    printf("\n[1] PATIENT REGISTRATION SUMMARY\n");
+    printf("     Total Patients Registered : %d\n", patientCount);
+    printf("      * Level 1 (Normal)       : %d\n", countLevel1);
+    printf("      * Level 2 (Urgent)       : %d\n", countLevel2);
+    printf("      * Level 3 (Critical)     : %d\n", countLevel3);
+
+    printf("\n[2] FINANCIAL SUMMARY\n");
+    printf("      -Total Revenue Earned    : LKR %.2f\n", totalRevenue);
+    printf("      -Total Discounts Granted : LKR %.2f\n", totalDiscounts);
+
+    printf("\n[3] BED OCCUPANCY PERCENTAGE PER WARD\n");
+    for (int i = 0; i < 4; i++)
+    {
+        float tempWardOccupancy = wardOccupancy[i];
+        float percentage = (tempWardOccupancy / BED_CAPACITY[i]) * 100.0;
+        printf("Ward %d: %d/%d Beds Occupied (%.2f%%)\n",i + 1, wardOccupancy[i], BED_CAPACITY[i],percentage);
+    }
+    printf("\n[4] HIGHEST-PAYING PATIENT\n");
+    if(maxFinalAmount > 0)
+    {
+        printf("       -Patient Name : %s\n",highestPayingPatient);
+        printf("       -Total Bill   : LKR %.2f\n",maxFinalAmount);
+    }
+    else
+    {
+        printf("No billing data recorded yet.\n");
+    }
+    printf("=========================================================\n");
+    return;
 }
