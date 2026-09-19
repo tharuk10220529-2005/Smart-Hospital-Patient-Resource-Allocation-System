@@ -20,6 +20,10 @@ void sortAndDisplay(char patientName[][50],int patientAge[],int emergencyLevel[]
                     int checkAdmitted[],int wardId[],int daysAdmitted[],int patientCount);
 void generatePerformanceReport(char patientName[][50], int emergencyLevel[], int checkAdmitted[], int wardId[], int daysAdmitted[], int patientCount,
                                float totalRevenue, float totalDiscounts, char highestPayingPatient[], float maxFinalAmount,const int BED_CAPACITY[]);
+void loadBedStatus(int bedOccupancy[4][20],const int BED_CAPACITY[]);
+void savePatientRecord(char patientName[],int patientAge,int emergencyLevel,int specialtyID,int checkAdmitted,int wardId,
+                       int daysAdmitted,float grossBill,float discount,float finalAmount);
+void saveBedStatus(const int bedOccupancy[4][20],const int BED_CAPACITY[]);
 int main()
 {
     //--------------------------------------------------
@@ -38,6 +42,9 @@ int main()
 
     // 2D Array Matrix for Bed Occupancy Tracking (4 Wards, Max 20 Beds each; 0=Available, 1=Occupied)
     int bedOccupancy[4][20] = {0};
+
+    //load previous bed status from file
+    loadBedStatus(bedOccupancy,BED_CAPACITY);
 
     //--------------------------------------------------
     // DYNAMIC PATIENT STORAGE ARRAYS & SYSTEM COUNTERS
@@ -183,6 +190,8 @@ int main()
                 {
                     printf("Warning: No available beds in %s!\n", WARD_NAME[selectedWard]);
                 }
+                //save update bed status
+                saveBedStatus(bedOccupancy,BED_CAPACITY);
 
             }
             else
@@ -237,6 +246,10 @@ int main()
             printf("FINAL AMOUNT PAYABLE     : LKR %.2f\n", finalAmount);
             printf("Estimated Waiting Time   : %.2f mins\n",estimateTime);
             printf("==================================================\n");
+
+            //save patient billing recodes
+            savePatientRecord(patientName[patientCount],patientAge[patientCount],emergencyLevel[patientCount],specialtyID[patientCount],
+                              checkAdmitted[patientCount],wardId[patientCount],daysAdmitted[patientCount],calclulatedGrossTotalBill,discount,finalAmount);
 
             patientCount++;
             break;
@@ -506,7 +519,7 @@ void generatePerformanceReport(char patientName[][50], int emergencyLevel[], int
         else if(emergencyLevel[i]==2) countLevel2++;
         else countLevel3++;
 
-        if(checkAdmitted[i] == 1 && wardId[i] >= 0 && wardId[i] <= 4)
+        if(checkAdmitted[i] == 1 && wardId[i] >= 1 && wardId[i] <= 4)
         {
             wardOccupancy[wardId[i]-1]++;
         }
@@ -544,4 +557,79 @@ void generatePerformanceReport(char patientName[][50], int emergencyLevel[], int
     }
     printf("=========================================================\n");
     return;
+}
+//load bed status(file bed-fb)
+void loadBedStatus(int bedOccupancy[4][20],const int BED_CAPACITY[])
+{
+    FILE *fb;
+    fb = fopen("bed_status.txt","r");
+
+    if(fb == NULL)
+    {
+        printf("\nNo previous bed status file found or Starting with all beds available\n");
+        return;
+    }
+    for(int i=0; i<4; i++)
+    {
+        for(int j=0; j<BED_CAPACITY[i]; j++)
+        {
+            fscanf(fb,"%d",&bedOccupancy[i][j]);
+        }
+    }
+    fclose(fb);
+    printf("\nPrevious bed occupancy status loaded successfully\n");
+}
+//save bed status(save file - fs)
+void saveBedStatus(const int bedOccupancy[4][20],const int BED_CAPACITY[])
+{
+    FILE *fs;
+    char *tempward[] = {"General Ward", "Paediatric Ward", "Surgical Ward", "ICU(Intensive Care Unit)"};
+    fs = fopen("bed_status.txt","w");
+
+    if(fs == NULL)
+    {
+        printf("Error : Cannot save bed status");
+        return;
+    }
+
+    for(int i=0; i<4; i++)
+    {
+        fprintf(fs," %s\n",tempward[i]);
+        for(int j=0; j<BED_CAPACITY[i]; j++)
+        {
+            fprintf(fs,"%d ",bedOccupancy[i][j]);
+        }
+        fprintf(fs,"\n");
+    }
+    fclose(fs);
+}
+//save patient billing recode(pb - patient billing)
+void savePatientRecord(char patientName[],int patientAge,int emergencyLevel,int specialtyID,int checkAdmitted,int wardId,
+                       int daysAdmitted,float grossBill,float discount,float finalAmount)
+{
+
+    FILE *pb;
+    pb = fopen("patient_records.txt","a");
+
+    if(pb == NULL)
+    {
+        printf("Error: Cannot open patient_records.txt");
+        return;
+    }
+
+    fprintf(pb,"patient Name : %s\n",patientName);
+    fprintf(pb,"patient Age  : %d\n",patientAge);
+    fprintf(pb,"Emergency    : %d\n",emergencyLevel);
+    fprintf(pb,"Specialty ID : %d\n",specialtyID);
+    fprintf(pb,"Admitted     : %d\n",checkAdmitted);
+    fprintf(pb,"ward ID      : %d\n",wardId);
+    fprintf(pb,"Days Admitted: %d\n",daysAdmitted);
+    fprintf(pb,"Gross Bill   : %.2f\n",grossBill);
+    fprintf(pb,"Discount     : %.2f\n",discount);
+    fprintf(pb,"Final Amount : %.2f\n",finalAmount);
+
+    fprintf(pb,"------------------------------------------\n");
+
+    fclose(pb);
+
 }
